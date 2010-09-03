@@ -16,6 +16,13 @@ declare function res:init() {
             </resource>
     )
     
+    let $put := map:put($map,"user",
+        <resource>
+            <path-prefix></path-prefix>
+            <path>user/:user</path>
+        </resource>
+    )
+    
     let $put := map:put($map, "category",
             <resource>
                 <path-prefix></path-prefix>

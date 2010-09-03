@@ -16,7 +16,7 @@
 
 import module namespace res = "urn:us:gov:ic:jman:storefront:resources:v0.01" at "/config/resources.xqy";
 
-(: Get some request information :)
+(: Get request information :)
 let $url := xdmp:get-request-field("url")
 let $method := xdmp:get-request-method()
 

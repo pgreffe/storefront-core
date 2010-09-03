@@ -1,4 +1,4 @@
-import module namespace g = "urn:us:gov:ic:jman:storefront:global:v0.01" at "global.xqy";
+import module namespace g = "urn:us:gov:ic:jman:storefront:global:v0.01" at "/config/global.xqy";
 
 let $h := xdmp:set-response-code(404,"Not Found")
 
