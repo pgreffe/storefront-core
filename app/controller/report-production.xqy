@@ -18,16 +18,15 @@ declare namespace msp = "urn:us:gov:ic:msp:v3.1";
 declare variable $search-opts := fn:doc('/app/config/admin/report-production.xml')/search:options;
 
 (: HTTP GET :)
-(:
 declare function controller:show($params as map:map) {
-    for $key in map:keys($params)
-    let $value := map:get($params, $key)
-    return fn:concat("GET => ", $key, "=", $value)
+    <report-production>
+        <bin uri="/report-production/one" count="34">one</bin>
+        <bin uri="/report-production/two" count="45">two</bin>
+        <bin uri="/report-production/three" count="12">three</bin>
+    </report-production>
 };
-:)
 
 (: HTTP PUT :)
-
 declare function controller:update($params as map:map) {
     for $key in map:keys($params)
     let $value := map:get($params, $key)
