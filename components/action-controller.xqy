@@ -16,6 +16,13 @@
         DELETE => controller:destroy
         POST => controller:create
     
+    ADDING A VIEW:
+    Views should be added in the app/view directory and must conform to the
+    following naming convention: {controller-name}.{repersentation}.xqy.  The
+    default mime-type for all views is defined in resources.xqy.  The model that
+    the controller generates is passed to the view with the $view:model
+    variable.
+    
     DETAILS ABOUT ADDING CONTROLLERS:
     To add a new controller (resource) to the framework see /config/resources.xqy
     This file contains configuration information about the controller that
@@ -59,17 +66,14 @@
     ActionController uses the following logic to process uris to controllers 
     (resources):
     1. split url by /
-    2. parse url backwards to find controller name
-    3. create map that contains scoping information where {:key} = {value-in-uri}
-    4. if there is a value for path prefix determine if additional values should
+    2. determine request-content type to set from url
+    3. parse url backwards to find controller name
+    4. create map that contains scoping information where {:key} = {value-in-uri}
+    5. if there is a value for path prefix determine if additional values should
        be added to path parameter map
-    5. determine HTTP method and call corresponding method in controller with 
+    6. determine HTTP method and call corresponding method in controller with 
        map as parameter.
-       
-    TODO 
-    Add support for setting content-type header in HTTP response.  Controller
-    implementations should not perform this action.
-    
+           
     TODO
     Add support for version in urls.  This needs to look at g:local-dev flag.
     For example if g:local-dev flag is true always evaluate controller at uri
@@ -82,42 +86,60 @@
     controller directories.  For example evaluate a controller at uri
     fn:concat($controllers-dir, 'some-dir') where 'some-dir' is defined in 
     resources.xqy
+    
+    TODO
+    Should bad repersentation request generate an error or return default
+    mime-type defined in res:mime-types?  Currently returns default.
 :)
 
 xquery version "1.0-ml";
 import module namespace res = "urn:us:gov:ic:jman:storefront:resources:v0.01" at "/config/resources.xqy";
 import module namespace error = "urn:us:gov:ic:jman:storefront:error:v0.01" at "/components/error.xqy";
+import module namespace json = "urn:us:gov:ic:jman:storefront:json:v0.01" at "/lib/json.xq";
 declare namespace controller = "urn:us:gov:ic:jman:storefront:controller:v0.01";
 declare namespace view = "urn:us:gov:ic:jman:storefront:view:v0.1";
 
 (:
-    declare variable $controllers-ns as xs:string := "controller"
-    declare variable $controllers-ext as xs:string := ".xqy"
-    declare variable $controllers-dir as xs:string := "/app/controller"
-    declare variable $url-request-field as xs:string := "url"
+    
 :)
+declare variable $controller:url-request-field as xs:string := "url";
+declare variable $controller:controller-dir as xs:string := "/app/controller/";
+declare variable $controller:view-dir as xs:string := "/app/view/";
 
 declare function controller:process-request() {
     (: Get request information :)
-    let $url := xdmp:get-request-field("url")
+    let $url := xdmp:get-request-field($controller:url-request-field)
     let $http-method := xdmp:get-request-method()
-    let $url-tokens := fn:tokenize($url, "/")
-    (: TODO fix this parse off end of url :)
-    let $repersentation := "html"
-    
+    let $mime-type := controller:get-mime-type($url)
+    let $content-type := data($mime-type/@content-type)
+    let $ext := data($mime-type/@extension)
+    (: Determine if a resource repersentation was requested :)
+    let $url-tokens := if(fn:substring-before($url, ".")) then
+        fn:tokenize(fn:substring-before($url, "."), "/")
+    else 
+        fn:tokenize($url, "/")
     let $controller-config := controller:get-controller-config($url-tokens)
     let $controller-name := $controller-config/name
-
+    
     return if ($controller-name) then  
         let $controller-path-prefix := $controller-config/resource/path-prefix
         let $controller-path := $controller-config/resource/path 
         let $params := controller:get-parameter-map($controller-path, 
             $url-tokens)
         return controller:eval-controller($controller-name, $http-method, 
-            $params, $url, "text/html")
+            $params, $url, $content-type, $ext)
         else 
             error:page(404, "Not Found")
 }; 
+
+declare function controller:get-mime-type($url as xs:string) {
+    let $repersentation := fn:substring-after($url, ".")
+    let $node := $res:mime-types/mime-type[@extension = $repersentation]
+    return if ($node) then
+        $node
+    else
+        $res:mime-types/mime-type[@default = "true"]
+};
 
 declare function controller:get-controller-config($tokens as xs:string*) {
     (: Determine which controller to use :)
@@ -138,16 +160,18 @@ declare function controller:get-parameter-map($controller-path as xs:string,
     let $params := map:map()
     let $dummy := for $path-token at $pos in $path-tokens
     where (fn:matches($path-token, "^:"))
-    return map:put($params, fn:substring-after($path-token, ":"), $url-tokens[$pos + 1])
+    return map:put($params, fn:substring-after($path-token, ":"), 
+        $url-tokens[$pos + 1])
     
     return $params
 };
 
 declare function controller:eval-controller($controller-name as xs:string, 
     $method as xs:string, $params as map:map, $url as xs:string, 
-    $content-type as xs:string) {
+    $content-type as xs:string, $ext as xs:string) {
     (: evaluate the controller :)
-    let $controller-file := fn:concat('/app/controller/', $controller-name, '.xqy')
+    let $controller-file := fn:concat($controller:controller-dir, 
+        $controller-name, '.xqy')
     let $import-declaration := fn:concat(
                 'import module namespace controller =',
                 '"urn:us:gov:ic:jman:storefront:controller:v0.1" at ',
@@ -177,8 +201,20 @@ declare function controller:eval-controller($controller-name as xs:string,
         
         (: set the response content type :)
         let $d := xdmp:set-response-content-type($content-type)
-        return xdmp:invoke("/app/view/report-production.html.xqy", 
-            (xs:QName("view:model"), $model))
+        (: 
+          invoke the view module - JSON by-passes this step and uses library 
+          function in lib/json.xqy 
+        :)
+        return if ($ext = "json") then
+            json:node-to-json($model)
+        else 
+            xdmp:invoke(fn:concat($controller:view-dir, $controller-name, ".", 
+                $ext, ".xqy"), 
+                (xs:QName("view:model"), $model))
+            (:
+            xdmp:invoke("/app/view/report-production.html.xqy", 
+                (xs:QName("view:model"), $model))
+            :)
     } catch ($e) {
         let $error-code := $e/error:code
         let $response := if ($error-code = "SVC-FILOPN") then

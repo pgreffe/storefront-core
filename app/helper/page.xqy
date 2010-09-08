@@ -7,3 +7,7 @@ declare function page:get-main-menu($user as xs:string?) as element(ul) {
         <li><a href="/reader">Reader</a></li>
     </ul>    
 };
+
+declare function page:get-template() {
+    ""
+};
