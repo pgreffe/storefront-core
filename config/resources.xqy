@@ -28,7 +28,7 @@ declare function res:init() {
     let $put := map:put($map, "sigint-home",
             <resource>
                 <path-prefix></path-prefix>
-                <path>sigint-home/:user</path>
+                <path>:user/sigint-home</path>
             </resource>
     )
     let $put := map:put($map, "search",
