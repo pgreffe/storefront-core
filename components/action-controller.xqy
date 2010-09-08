@@ -171,7 +171,7 @@ declare function controller:eval-controller($controller-name as xs:string,
     $content-type as xs:string, $ext as xs:string) {
     (: evaluate the controller :)
     let $controller-file := fn:concat($controller:controller-dir, 
-        $controller-name, '.xqy')
+        $controller-name, '-controller.xqy')
     let $import-declaration := fn:concat(
                 'import module namespace controller =',
                 '"urn:us:gov:ic:jman:storefront:controller:v0.1" at ',
