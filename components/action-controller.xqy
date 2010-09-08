@@ -211,10 +211,6 @@ declare function controller:eval-controller($controller-name as xs:string,
             xdmp:invoke(fn:concat($controller:view-dir, $controller-name, ".", 
                 $ext, ".xqy"), 
                 (xs:QName("view:model"), $model))
-            (:
-            xdmp:invoke("/app/view/report-production.html.xqy", 
-                (xs:QName("view:model"), $model))
-            :)
     } catch ($e) {
         let $error-code := $e/error:code
         let $response := if ($error-code = "SVC-FILOPN") then
