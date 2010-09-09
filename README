@@ -1,6 +1,9 @@
 README file for Storefront core services.
 
 Storefront core is the implementation of the core resource oriented architecture.  
+
+For more detailed design descriptions see doc/storefront-design.doc and doc/storefront-core.vsd
+
 The core services rely on the xqroa main an library modules which provide a framework
 for resource definition and configuration.  To add a resource to the framework
 perform the following actions (FROM xqroa):
