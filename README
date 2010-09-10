@@ -8,6 +8,10 @@ The core services rely on the xqroa main an library modules which provide a fram
 for resource definition and configuration.  To add a resource to the framework
 perform the following actions (FROM xqroa):
 
+HTTP request parameters are available to views and controllers, in addition to 
+url scoping information, defined in resources.xqy with the key 'request-params' 
+which will return a map:map element   
+
 ADD A CONTROLLER FOR THE RESOURCE
 --------------------------------------------------------------------------------
 There are three steps to add a controller:
@@ -39,7 +43,11 @@ There are two steps to add a view:
         declare variable $view:model as element() external;
         
         To access the parameters passed to the controller in the view define:
-        declare variable $controller:params as map:map external;        
+        declare variable $controller:params as map:map external; 
+        
+        HTTP request parameters are also available to views and controllers
+        with the key 'request-params' which will return a map:map element   
+               
             
 Also see resources.xqy and action-controller.xqy for more detailed information.
 
