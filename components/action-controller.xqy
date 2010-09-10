@@ -100,7 +100,12 @@
        be added to path parameter map
     6. determine HTTP method and call corresponding method in controller with 
        map as parameter.
-           
+        
+    TODO 
+    Add better handling of url parameter replacement and processing.  Currently
+    /sigint-home.html will set user key incorrectly to controller name.  When
+    this is fixed change :user commented code in resources.xqy
+       
     TODO
     Add support for version in urls.  This needs to look at g:local-dev flag.
     For example if g:local-dev flag is true always evaluate controller at uri

@@ -217,7 +217,7 @@ declare function report:findby-nipf($nipf as xs:string*)
     ''    
 };
 
-declare function report:findby-nipf($nipf as element(nipf))
+declare function report:findby-nipf-element($nipf as element(nipf))
     as element(search:response) {
     ''    
 };
@@ -227,7 +227,7 @@ declare function report:findby-nipfs($nipf as xs:string*)
     ''
 };
 
-declare function report:findby-nipfs($nipf as element(nipf-list))
+declare function report:findby-nipfs-element($nipf as element(nipf-list))
     as element(search:response) {
     ''
 };
