@@ -35,7 +35,10 @@
             declare variable $view:model as element() external;
             
             To access the parameters passed to the controller in the view define:
-            declare variable $controller:params as map:map external;        
+            declare variable $controller:params as map:map external;
+            
+            HTTP request parameters are also available to views and controllers
+            with the key 'request-params' which will return a map:map element   
     
     Example Controller Code
     ----------------------------------------------------------------------------
@@ -97,7 +100,12 @@
        be added to path parameter map
     6. determine HTTP method and call corresponding method in controller with 
        map as parameter.
-           
+        
+    TODO 
+    Add better handling of url parameter replacement and processing.  Currently
+    /sigint-home.html will set user key incorrectly to controller name.  When
+    this is fixed change :user commented code in resources.xqy
+       
     TODO
     Add support for version in urls.  This needs to look at g:local-dev flag.
     For example if g:local-dev flag is true always evaluate controller at uri
@@ -187,6 +195,14 @@ declare function controller:get-parameter-map($controller-path as xs:string,
     return map:put($params, fn:substring-after($path-token, ":"), 
         $url-tokens[$pos + 1])
     
+    (: pass through HTTP request parameters :)
+    (: TODO make sure PUT and POST pass through parameters :)
+    let $request-params := map:map()
+    let $dummy := for $fn in xdmp:get-request-field-names()
+    return map:put($request-params, $fn, xdmp:get-request-field($fn))
+    
+    (: add them with key 'request-params' :)
+    let $dummy := map:put($params, 'request-params', $request-params)
     return $params
 };
 
@@ -238,6 +254,7 @@ declare function controller:eval-controller($controller-name as xs:string,
                 xs:QName("controller:params"), $params))
     } catch ($e) {
         let $error-code := $e/error:code
+        let $t := xdmp:set-response-content-type("text/xml")
         let $response := if ($error-code = "SVC-FILOPN") then
             xdmp:set-response-code(500, fn:concat("Internal Server Error. ", 
                 "Could not process request method: ", $method, " uri: ", $url, 

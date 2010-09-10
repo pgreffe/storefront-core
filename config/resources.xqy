@@ -28,13 +28,13 @@ declare function res:init() {
     let $put := map:put($map, "sigint-home",
             <resource>
                 <path-prefix></path-prefix>
-                <path>:user/sigint-home</path>
+                <path>sigint-home</path>
             </resource>
     )
     let $put := map:put($map, "search",
             <resource>
                 <path-prefix></path-prefix>
-                <path>search/:user</path>
+                <path>search</path>
             </resource>
     )
     let $put := map:put($map, "reader",
@@ -56,11 +56,16 @@ declare function res:init() {
         </resource>
     )
     let $put := map:put($map, "category",
-            <resource>
-                <path-prefix></path-prefix>
-                <path>category/:category-name/:category-filter</path>
-            </resource>
+        <resource>
+            <path-prefix></path-prefix>
+            <path>category/:category-name/:category-filter</path>
+        </resource>
     )
-
+    let $put := map:put($map, "report", 
+        <resource>
+            <path-prefix></path-prefix>
+            <path>report</path>
+        </resource>
+    )
     return $map
 };

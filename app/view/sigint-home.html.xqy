@@ -10,7 +10,7 @@ let $user := map:get($controller:params, "user")
 return <html>
     <body>
         <h1>SIGINT Home page - user: {$user}</h1>{
-            page:get-main-menu($user)
+            page:get-main-menu('kenshalo')
         }<p>
             <div id="current-information">
                 Current Information View
