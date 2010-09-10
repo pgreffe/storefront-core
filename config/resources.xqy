@@ -61,7 +61,7 @@ declare function res:init() {
             <path>category/:category-name/:category-filter</path>
         </resource>
     )
-    let $put := map:put($map, "viewer", 
+    let $put := map:put($map, "report", 
         <resource>
             <path-prefix></path-prefix>
             <path>report</path>
