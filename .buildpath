@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <buildpath>
 	<buildpathentry kind="src" path="app/controller"/>
+	<buildpathentry kind="src" path="app/helper"/>
 	<buildpathentry kind="src" path="components"/>
 	<buildpathentry kind="src" path="config"/>
 	<buildpathentry kind="src" path="lib"/>
-	<buildpathentry kind="src" path="helper"/>
-	<buildpathentry excluding="controller/|helper/|model/|view/|helper/" kind="src" path="app"/>
+	<buildpathentry excluding="controller/|model/|view/|helper/" kind="src" path="app"/>
 	<buildpathentry kind="src" path="app/model"/>
 	<buildpathentry kind="src" path="app/view"/>
-	<buildpathentry kind="src" path="app/helper"/>
 </buildpath>
