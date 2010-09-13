@@ -32,3 +32,4 @@ as xs:string
 
 declare variable $url as xs:string := xdmp:get-request-url();
 fn:concat("/components/action-controller.xqy?", local:construct-new($url))
+
