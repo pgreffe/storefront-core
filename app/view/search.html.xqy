@@ -27,7 +27,7 @@ return
         <div id='search-results-view'><ul>{
             for $result in $view:model/search:result
             return <li>
-                <a href="{fn:concat('/report?sn=', data($result/@uri))}">{data($result/@uri)}</a>
+                <a href="{fn:concat('/report.json?sn=', data($result/@uri))}">{data($result/@uri)}</a>
             </li>
         }</ul></div>
     </p>

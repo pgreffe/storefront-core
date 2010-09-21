@@ -1,3 +1,4 @@
+
 (:
     IMPORTANT: 
     This file should NOT have to be modified.  Modification will have impact 
@@ -123,13 +124,23 @@
     Should bad representation request generate an error or return default
     mime-type defined in res:mime-types?  Currently returns default.
 :)
-
 xquery version "1.0-ml";
+(: declaring the MSP namespace helps the processor recognize the MSP XML :)
+declare namespace msp = "urn:us:gov:ic:msp:v3.1";
 import module namespace res = "urn:us:gov:ic:jman:storefront:resources:v0.01" at "/config/resources.xqy";
 import module namespace error = "urn:us:gov:ic:jman:storefront:error:v0.01" at "/components/error.xqy";
-import module namespace json = "urn:us:gov:ic:jman:storefront:json:v0.01" at "/lib/json.xq";
+(: RW I am just basically plopping the other JSON library in here for testing purposes.  Would be better to
+    be able to configure this 
+import module namespace json = "urn:us:gov:ic:jman:storefront:json:v0.01" at "/lib/json.xq"; 
+
+:)
+
+import module namespace json = "http://marklogic.com/json" at "/lib/json.xqy"; 
+
 declare namespace controller = "urn:us:gov:ic:jman:storefront:controller:v0.01";
 declare namespace view = "urn:us:gov:ic:jman:storefront:view:v0.1";
+
+
 
 (:
     
@@ -248,7 +259,13 @@ declare function controller:eval-controller($controller-name as xs:string,
           function in lib/json.xqy 
         :)
         return if ($ext = "json") then
+            (: RW temp change to try out new JSON library 
             json:node-to-json($model)
+            json:serialize($model)
+            :)
+            
+            json:serialize($model)
+            
         else 
             xdmp:invoke($view-file, (xs:QName("view:model"), $model, 
                 xs:QName("controller:params"), $params))
