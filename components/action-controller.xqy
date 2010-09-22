@@ -193,7 +193,7 @@ declare function controller:get-parameter-map($controller-path as xs:string,
     let $dummy := for $path-token at $pos in $path-tokens
     where (fn:matches($path-token, "^:"))
     return map:put($params, fn:substring-after($path-token, ":"), 
-        $url-tokens[$pos + 1])
+        $url-tokens[$pos])
     
     (: pass through HTTP request parameters :)
     (: TODO make sure PUT and POST pass through parameters :)
