@@ -27,8 +27,8 @@ declare variable $res:resource-config as element(resources) := <resources>
     <resource name="currentinformation">
         <path>/view/current-information</path>
     </resource>
-    <resource name="reportproduction">
-        <path>/view/reportproduction</path>
+    <resource name="report-production">
+        <path>/view/report-production</path>
     </resource>
     <resource name="user">
         <path>/user/:user</path>

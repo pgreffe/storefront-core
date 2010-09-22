@@ -9,15 +9,16 @@ declare variable $view:model as element() external;
 
 let $request-params := map:get($controller:params, 'request-params')
 let $q := map:get($request-params, 'q')
+let $user := map:get($controller:params, "user")
 return 
 <html>
     <body>
-    <h1>Search Page</h1>{
-        page:get-main-menu('kenshalo')
+    <h1>Search Page - user: {$user}</h1>{
+        page:get-main-menu($user)
     }
     <p>
         <div id="search-view">
-            <form method="GET" action="/search">
+            <form method="GET" action="{fn:concat('/', $user, '/search')}">
                 <input type="text" name="q" value="{$q}"/>
                 <input type="submit" value="Search" />
             </form>

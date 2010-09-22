@@ -157,7 +157,7 @@ declare function controller:process-request() {
         let $params := controller:get-parameter-map($url, $resource)
         return controller:eval-controller($resource, $http-method, $params, $url)
     else 
-        error:page(404, "Not Found")
+        $res:resources
 }; 
 
 declare function controller:get-resource-config($url as xs:string) 
