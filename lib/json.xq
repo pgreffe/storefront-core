@@ -1,3 +1,4 @@
+xquery version "1.0-ml";
 (:
  : module: json.xqy - functions to convert XML nodes to JSON 
  : @author: Mike Fagan
@@ -14,7 +15,7 @@ declare function json:nodes-to-json(
   ) as xs:string 
 {
   
-
+  let $d := fn:trace("Serializing nodes to JSON", "call-json-transform")
   let $result := if ( fn:count($node) > 1 ) then
     let $results := for $item in $node return json:node-to-json( $item )
     return fn:concat('[',fn:string-join($results,','),']')

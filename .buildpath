@@ -8,4 +8,5 @@
 	<buildpathentry excluding="controller/|model/|view/|helper/" kind="src" path="app"/>
 	<buildpathentry kind="src" path="app/model"/>
 	<buildpathentry kind="src" path="app/view"/>
+	<buildpathentry kind="con" path="org.eclipse.dltk.launching.INTERPRETER_CONTAINER/org.eclipse.wst.xquery.launching.MarkLogicInstallType/StoreFront"/>
 </buildpath>
