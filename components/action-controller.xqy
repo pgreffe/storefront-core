@@ -1,4 +1,3 @@
-
 (:
     IMPORTANT: 
     This file should NOT have to be modified.  Modification will have impact 
@@ -129,21 +128,19 @@ xquery version "1.0-ml";
 declare namespace msp = "urn:us:gov:ic:msp:v3.1";
 import module namespace res = "urn:us:gov:ic:jman:storefront:resources:v0.01" at "/config/resources.xqy";
 import module namespace error = "urn:us:gov:ic:jman:storefront:error:v0.01" at "/components/error.xqy";
+import module namespace util = "urn:us:gov:ic:jman:storefront:util:v0.01" at "/lib/util.xq";
+
 (: RW I am just basically plopping the other JSON library in here for testing purposes.  Would be better to
     be able to configure this 
 import module namespace json = "urn:us:gov:ic:jman:storefront:json:v0.01" at "/lib/json.xq"; 
 
 :)
-
 import module namespace json = "http://marklogic.com/json" at "/lib/json.xqy"; 
-
 declare namespace controller = "urn:us:gov:ic:jman:storefront:controller:v0.01";
 declare namespace view = "urn:us:gov:ic:jman:storefront:view:v0.1";
 
-
-
 (:
-    
+    TODO externalize constants in globals.xqy 
 :)
 declare variable $controller:url-request-field as xs:string := "url";
 declare variable $controller:controller-dir as xs:string := "/app/controller/";
@@ -151,76 +148,82 @@ declare variable $controller:view-dir as xs:string := "/app/view/";
 
 declare function controller:process-request() {
     (: Get request information :)
-    let $url := xdmp:get-request-field($controller:url-request-field)
+    let $url := util:trim-trailing-slash(
+        xdmp:get-request-field($controller:url-request-field))
     let $http-method := xdmp:get-request-method()
-    let $mime-type := controller:get-mime-type($url)
-    let $content-type := data($mime-type/@content-type)
-    let $ext := data($mime-type/@extension)
-    (: Determine if a resource representation was requested :)
-    let $url-tokens := if(fn:substring-before($url, ".")) then
-        fn:tokenize(fn:substring-before($url, "."), "/")
-    else 
-        fn:tokenize($url, "/")
-    let $controller-config := controller:get-controller-config($url-tokens)
-    let $controller-name := $controller-config/name
     
-    return if ($controller-name) then  
-        let $controller-path-prefix := $controller-config/resource/path-prefix
-        let $controller-path := $controller-config/resource/path 
-        let $params := controller:get-parameter-map($controller-path, 
-            $url-tokens)
-        return controller:eval-controller($controller-name, $http-method, 
-            $params, $url, $content-type, $ext)
-        else 
-            error:page(404, "Not Found")
+    let $resource := controller:get-resource-config($url)
+    return if($resource[@name != 'not-found']) then
+        let $params := controller:get-parameter-map($url, $resource)
+        return controller:eval-controller($resource, $http-method, $params, $url)
+    else 
+        error:page(404, "Not Found")
 }; 
 
-declare function controller:get-mime-type($url as xs:string) {
-    let $representation := fn:substring-after($url, ".")
-    let $node := $res:mime-types/mime-type[@extension = $representation]
-    return if ($node) then
-        $node
-    else
-        $res:mime-types/mime-type[@default = "true"]
-};
-
-declare function controller:get-controller-config($tokens as xs:string*) {
-    (: Determine which controller to use :)
-    let $controller := for $key in fn:reverse($tokens)
-    let $value := map:get($res:resource-map, $key)
-    where $value
-    return <controller>
-        <name>{$key}</name>
-        {$value}
-    </controller>
+declare function controller:get-resource-config($url as xs:string) 
+    as element(resource) {
+    (: determine which resource to use :)
+    let $found-resource := for $resource in $res:resources/resource
+    where fn:matches($url, $resource/url-regex/text())
+    return $resource
     
-    return $controller
+    return if($found-resource) then
+        $found-resource
+    else
+        <resource name="not-found"></resource>
+    
 };
 
-declare function controller:get-parameter-map($controller-path as xs:string, 
-    $url-tokens as xs:string*) {
-    let $path-tokens := fn:tokenize($controller-path, "/")
+declare function controller:get-parameter-map($url as xs:string, 
+    $resource as element(resource)) {
+    let $url-regex := fn:concat($resource/url-regex/text())
+    let $resource-path := $resource/path/text()
+    let $resource-regex := $resource/path-regex/text()
+
+    (: determine the number of tokens in the url -1 is for token created :)
+    let $cnt := fn:count(fn:tokenize($resource-path, "/"))
+    let $map-tokens := 
+        for $idx in 1 to $cnt - 1
+        return fn:concat("$", $idx, "=>\$", $idx)
+    let $map-str := fn:string-join($map-tokens, ";")
+
+    (: replace keys in map :)
+    let $map-keys := fn:replace($resource-path, $resource-regex, $map-str)
+    
+    (: get the representation :)
+    let $map-keys := fn:concat($map-keys, ';representation=>$', $cnt)
+    
+    (: replace values for corresponding keys :)
+    let $map := fn:replace($url, $url-regex, $map-keys)
+  
+    (: create the map - removes whitespace before inserting values :)
     let $params := map:map()
-    let $dummy := for $path-token at $pos in $path-tokens
-    where (fn:matches($path-token, "^:"))
-    return map:put($params, fn:substring-after($path-token, ":"), 
-        $url-tokens[$pos])
+    let $d := 
+        for $str in fn:tokenize($map, ";")
+        let $kv-pair := fn:tokenize($str, "=>")
+        let $key := $kv-pair[1]
+        let $val := $kv-pair[2]
+        return if ($key != $val) then
+            if (fn:string-length($val) and $val != '/') then
+                map:put($params, fn:replace($key, '\W+', ''), fn:replace($val, '\W+', ''))
+            else
+                map:put($params, fn:replace($key, '\W+', ''), "") 
+        else ''
     
     (: pass through HTTP request parameters :)
-    (: TODO make sure PUT and POST pass through parameters :)
     let $request-params := map:map()
     let $dummy := for $fn in xdmp:get-request-field-names()
     return map:put($request-params, $fn, xdmp:get-request-field($fn))
-    
     (: add them with key 'request-params' :)
     let $dummy := map:put($params, 'request-params', $request-params)
+
     return $params
 };
 
-declare function controller:eval-controller($controller-name as xs:string, 
-    $method as xs:string, $params as map:map, $url as xs:string, 
-    $content-type as xs:string, $ext as xs:string) {
+declare function controller:eval-controller($resource as element(resource), 
+    $method as xs:string, $params as map:map, $url as xs:string) {
     (: evaluate the controller :)
+    let $controller-name := data($resource/@name)
     let $controller-file := fn:concat($controller:controller-dir, 
         $controller-name, '-controller.xqy')
     let $import-declaration := fn:concat(
@@ -250,22 +253,29 @@ declare function controller:eval-controller($controller-name as xs:string,
             </options>
         )
         
-        (: set the response content type :)
-        let $d := xdmp:set-response-content-type($content-type)
-        let $view-file := fn:concat($controller:view-dir, $controller-name, ".", 
-            $ext, ".xqy")
         (: 
-          invoke the view module - JSON by-passes this step and uses library 
-          function in lib/json.xqy 
+          set the response content type.  Uses the following logic:
+          1) if representation in params then look up mime-type from res:mime-types
+          2) if there is no representation in params (url didn't) contain an extension
+          then use the default representation defined by the resource
+          3) if all else fails use the default mime-type in $res:mime-types   
         :)
-        return if ($ext = "json") then
-            (: RW temp change to try out new JSON library 
-            json:node-to-json($model)
+        let $rep := if(map:get($params, 'representation')) then
+            map:get($params, 'representation')
+        else if($resource/representations/representation[@default = 'true']) then
+            fn:data($resource/representations/representation[@default = 'true']/@extension)
+        else 
+            fn:data($res:mime-types/mime-type[@default = 'true']/@extension)
+        
+        let $d := xdmp:set-response-content-type($res:mime-types/mime-type[@extension = $rep])
+        let $view-file := fn:concat($controller:view-dir, $controller-name, ".", 
+            $rep, ".xqy")
+        
+        (: 
+          JSON by-passes view module and uses library function in lib/json.xqy 
+        :)
+        return if ($rep = "json") then
             json:serialize($model)
-            :)
-            
-            json:serialize($model)
-            
         else 
             xdmp:invoke($view-file, (xs:QName("view:model"), $model, 
                 xs:QName("controller:params"), $params))
@@ -286,5 +296,5 @@ declare function controller:eval-controller($controller-name as xs:string,
     }
 };
 
-(: This is a main module so call the function... :)
+(: This is a main module so call process-request() ... :)
 controller:process-request()
